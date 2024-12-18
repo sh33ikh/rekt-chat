@@ -1,77 +1,76 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rekt Chat - Next Generation AI Assistant</title>
-    <meta name="description" content="Experience intelligent conversations with Rekt Chat, powered by advanced AI technology.">
+    <title>Rekt Chat - AI Assistant</title>
+    <meta name="description" content="Experience intelligent conversations with Rekt Chat - A modern AI assistant powered by advanced language models">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Enhanced meta tags for better SEO and sharing -->
-    <meta name="keywords" content="AI chatbot, artificial intelligence, chat assistant, Rekt Chat">
-    <meta name="author" content="Rekt Chat">
-    <meta property="og:title" content="Rekt Chat - Next Generation AI Assistant">
-    <meta property="og:description" content="Experience intelligent conversations with Rekt Chat, powered by advanced AI technology.">
+    <!-- Open Graph tags -->
+    <meta property="og:title" content="Rekt Chat - AI Assistant">
+    <meta property="og:description" content="Experience intelligent conversations with Rekt Chat - A modern AI assistant powered by advanced language models">
     <meta property="og:image" content="https://sh33ikh.github.io/rekt-chat/img/og-image.jpg">
     <meta property="og:url" content="https://sh33ikh.github.io/rekt-chat/">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="theme-color" content="#000000">
 </head>
 <body>
     <div class="app-container">
-        <nav class="top-nav">
-            <div class="nav-content">
-                <div class="logo">
-                    <i class="fas fa-robot"></i>
-                    <span>Rekt Chat</span>
-                </div>
-                <div class="nav-actions">
-                    <button id="theme-toggle" aria-label="Toggle theme">
-                        <i class="fas fa-moon"></i>
+        <header class="app-header">
+            <div class="header-content">
+                <h1><i class="fas fa-robot"></i> Rekt Chat</h1>
+                <div class="header-actions">
+                    <button id="theme-toggle" class="icon-button" aria-label="Toggle theme">
+                        <i class="fas fa-sun"></i>
                     </button>
-                    <button id="clear-chat" class="clear-button" aria-label="Clear chat">
-                        <i class="fas fa-trash-alt"></i>
+                    <button id="clear-chat" class="icon-button" aria-label="Clear chat">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
-        </nav>
-        
-        <main class="chat-interface">
-            <div class="messages-container">
-                <div id="chat-messages"></div>
-                <div id="typing-indicator" class="hidden">
-                    <div class="typing-bubble">
-                        <div class="dots">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </div>
+        </header>
+
+        <main class="chat-container">
+            <div id="chat-messages" class="messages-container">
+                <div class="welcome-message">
+                    <h2>What can I help you with?</h2>
+                    <p>Ask me anything and I'll do my best to help!</p>
+                </div>
+            </div>
+
+            <div id="typing-indicator" class="typing-indicator hidden">
+                <div class="typing-bubble">
+                    <div class="dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
                     </div>
                 </div>
             </div>
-            
-            <form id="chat-form" class="input-area">
+
+            <form id="chat-form" class="chat-input-container">
                 <div class="input-wrapper">
                     <textarea 
                         id="user-input" 
-                        placeholder="Message Rekt Chat..." 
+                        placeholder="Ask a question..." 
                         rows="1"
                         maxlength="1000"
+                        aria-label="Chat input"
                     ></textarea>
-                    <button type="submit" id="send-button" aria-label="Send message">
-                        <i class="fas fa-paper-plane"></i>
-                    </button>
-                </div>
-                <div class="input-footer">
-                    <span class="char-count">0/1000</span>
+                    <div class="input-actions">
+                        <span id="char-counter" class="char-counter">0/1000</span>
+                        <button type="submit" id="send-button" class="send-button" aria-label="Send message">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
                 </div>
             </form>
         </main>
     </div>
 
-    <div id="toast-container"></div>
-    
+    <div id="toast-container" class="toast-container"></div>
+
     <script src="js/config.js"></script>
     <script src="js/app.js"></script>
 </body>
