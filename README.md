@@ -25,11 +25,9 @@ Rekt Chat is a sophisticated conversational AI application designed to provide s
 
 ## 📸 Screenshots
 
-### Desktop Interface
+### Interface
 ![Rekt Chat - Desktop](https://sh33ikh.github.io/rekt-chat/img/screenshots/desktop.png)
 
-### Mobile Experience
-![Rekt Chat - Mobile](https://sh33ikh.github.io/rekt-chat/img/screenshots/mobile.png)
 
 ## 🛠️ Tech Stack
 
