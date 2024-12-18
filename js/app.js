@@ -7,101 +7,95 @@ document.addEventListener('DOMContentLoaded', () => {
     const typingIndicator = document.getElementById('typing-indicator');
     const clearChatButton = document.getElementById('clear-chat');
     const themeToggle = document.getElementById('theme-toggle');
-    const charCount = document.querySelector('.char-count');
-    const errorToast = document.getElementById('error-toast');
+    const charCounter = document.getElementById('char-counter');
+    const toastContainer = document.getElementById('toast-container');
 
     // State
-    let darkMode = localStorage.getItem('darkMode') === 'true';
+    let darkMode = document.documentElement.classList.contains('dark');
     let retryCount = 0;
-
-    // Initialize
-    updateTheme();
-    addMessage('bot', config.WELCOME_MESSAGE);
 
     // Event Listeners
     chatForm.addEventListener('submit', handleSubmit);
     clearChatButton.addEventListener('click', clearChat);
     themeToggle.addEventListener('click', toggleTheme);
     userInput.addEventListener('input', handleInput);
-    document.addEventListener('keydown', handleKeyPress);
+    userInput.addEventListener('keydown', handleKeydown);
+    document.addEventListener('keydown', handleHotkeys);
 
-    function handleKeyPress(e) {
+    // Initialize
+    loadChat();
+    updateThemeButton();
+    userInput.focus();
+
+    function handleInput(e) {
+        const length = e.target.value.length;
+        charCounter.textContent = `${length}/${config.MAX_CHARS}`;
+        autoResize();
+    }
+
+    function autoResize() {
+        userInput.style.height = 'auto';
+        userInput.style.height = userInput.scrollHeight + 'px';
+    }
+
+    function handleKeydown(e) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             chatForm.requestSubmit();
         }
     }
 
-    function handleInput(e) {
-        const length = e.target.value.length;
-        charCount.textContent = `${length}/${config.MAX_MESSAGE_LENGTH}`;
-
-        // Auto-resize textarea
-        e.target.style.height = 'auto';
-        e.target.style.height = `${e.target.scrollHeight}px`;
-
-        // Enable/disable send button
-        sendButton.disabled = length === 0;
+    function handleHotkeys(e) {
+        if (e.ctrlKey || e.metaKey) {
+            switch(e.key) {
+                case '/':
+                    e.preventDefault();
+                    userInput.focus();
+                    break;
+                case 'l':
+                    e.preventDefault();
+                    clearChat();
+                    break;
+            }
+        }
     }
 
     async function handleSubmit(e) {
         e.preventDefault();
         const message = userInput.value.trim();
-
         if (message) {
-            // Disable input and show loading state
-            setFormState(true);
             addMessage('user', message);
             userInput.value = '';
             userInput.style.height = 'auto';
+            charCounter.textContent = `0/${config.MAX_CHARS}`;
+            disableInput(true);
+            showTypingIndicator();
 
             try {
-                const response = await sendMessageToBot(message);
-                await simulateTyping(response);
+                const response = await sendMessageWithRetry(message);
                 addMessage('bot', response);
-                retryCount = 0;
+                showToast('Message sent successfully!', 'success');
             } catch (error) {
                 console.error('Error:', error);
-                showToast('Failed to get response. Please try again.', 'error');
-
-                if (retryCount < config.MAX_RETRIES) {
-                    retryCount++;
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    chatForm.requestSubmit();
-                } else {
-                    showToast('Maximum retry attempts reached. Please try again later.', 'error');
-                    retryCount = 0;
-                }
-            } finally {
-                setFormState(false);
+                showToast('Failed to send message. Please try again.', 'error');
             }
+
+            disableInput(false);
+            hideTypingIndicator();
+            userInput.focus();
         }
     }
 
-    function setFormState(loading) {
-        userInput.disabled = loading;
-        sendButton.disabled = loading;
-        typingIndicator.classList.toggle('hidden', !loading);
-    }
-
-    async function simulateTyping(text) {
-        typingIndicator.classList.remove('hidden');
-        await new Promise(resolve => setTimeout(resolve, Math.min(text.length * config.TYPING_SPEED, 2000)));
-        typingIndicator.classList.add('hidden');
-    }
-
-    function addMessage(sender, content) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', `${sender}-message`);
-        messageElement.textContent = content;
-
-        // Add ARIA labels for accessibility
-        messageElement.setAttribute('role', 'log');
-        messageElement.setAttribute('aria-label', `${sender} message: ${content}`);
-
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        saveChat();
+    async function sendMessageWithRetry(message, attempt = 1) {
+        try {
+            return await sendMessageToBot(message);
+        } catch (error) {
+            if (attempt < config.MAX_RETRIES) {
+                await new Promise(resolve => setTimeout(resolve, config.RETRY_DELAY * attempt));
+                return sendMessageWithRetry(message, attempt + 1);
+            }
+            throw error;
+        }
     }
 
     async function sendMessageToBot(message) {
@@ -123,18 +117,60 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!response.ok) {
-            throw new Error(`API request failed: ${response.status}`);
+            throw new Error('Failed to fetch from Cohere API');
         }
 
         const data = await response.json();
         return data.generations[0].text.trim();
     }
 
+    function addMessage(sender, content) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', `${sender}-message`);
+        messageElement.textContent = content;
+        
+        // Add for screen readers
+        messageElement.setAttribute('role', 'log');
+        messageElement.setAttribute('aria-label', `${sender} message: ${content}`);
+        
+        chatMessages.appendChild(messageElement);
+        messageElement.scrollIntoView({ behavior: 'smooth' });
+        saveChat();
+    }
+
+    function showTypingIndicator() {
+        typingIndicator.classList.remove('hidden');
+        typingIndicator.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function hideTypingIndicator() {
+        typingIndicator.classList.add('hidden');
+    }
+
+    function disableInput(disabled) {
+        userInput.disabled = disabled;
+        sendButton.disabled = disabled;
+    }
+
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.classList.add('toast', type);
+        toast.textContent = message;
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
     function saveChat() {
-        const messages = Array.from(chatMessages.children).map(msg => ({
-            sender: msg.classList.contains('user-message') ? 'user' : 'bot',
-            content: msg.textContent
-        }));
+        const messages = Array.from(chatMessages.children)
+            .filter(el => el.classList.contains('message'))
+            .map(msg => ({
+                sender: msg.classList.contains('user-message') ? 'user' : 'bot',
+                content: msg.textContent
+            }));
         localStorage.setItem('chatHistory', JSON.stringify(messages));
     }
 
@@ -148,41 +184,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function clearChat() {
-        showToast('Chat history cleared');
         chatMessages.innerHTML = '';
         localStorage.removeItem('chatHistory');
         addMessage('bot', config.WELCOME_MESSAGE);
+        showToast('Chat cleared', 'success');
     }
 
     function toggleTheme() {
         darkMode = !darkMode;
-        updateTheme();
-        localStorage.setItem('darkMode', darkMode);
+        document.documentElement.classList.toggle('dark', darkMode);
+        localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+        updateThemeButton();
+        showToast(`${darkMode ? 'Dark' : 'Light'} mode activated`, 'success');
     }
 
-    function updateTheme() {
-        document.body.classList.toggle('dark-theme', darkMode);
-        themeToggle.innerHTML = darkMode ? 
-            '<i class="fas fa-sun"></i>' : 
-            '<i class="fas fa-moon"></i>';
+    function updateThemeButton() {
+        themeToggle.innerHTML = `<i class="fas fa-${darkMode ? 'sun' : 'moon'}"></i>`;
     }
-
-    function showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        toast.classList.add('toast');
-        if (type === 'error') toast.classList.add('error');
-        toast.textContent = message;
-
-        const toastContainer = document.getElementById('toast-container');
-        toastContainer.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 300);
-        }, config.TOAST_DURATION);
-    }
-
-    // Load chat history on page load
-    loadChat();
 });
 
